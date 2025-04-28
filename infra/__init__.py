@@ -1,0 +1,3 @@
+"""
+AWS CDK Infrastructure Package
+"""
