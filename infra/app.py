@@ -6,6 +6,7 @@ from aws_cdk import (
     App,
     Stack,
     Duration,
+    Environment,
     aws_s3 as s3,
     aws_dynamodb as dynamodb,
     aws_lambda as lambda_,
@@ -21,8 +22,8 @@ class AwsDocsArchiverStack(Stack):
     """
     AWSドキュメントアーカイブシステムのインフラスタック
     """
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
-        super().__init__(scope, construct_id, **kwargs)
+    def __init__(self, scope: Construct, construct_id: str, env=None, **kwargs) -> None:
+        super().__init__(scope, construct_id, env=env, **kwargs)
 
         # S3バケット - ドキュメントコンテンツ保存用
         docs_bucket = s3.Bucket(
@@ -113,5 +114,26 @@ class AwsDocsArchiverStack(Stack):
 
 
 app = App()
-AwsDocsArchiverStack(app, "AwsDocsArchiverStack")
+
+# 環境変数から環境情報を取得（デフォルトはdev）
+env_name = app.node.try_get_context('env') or 'dev'
+
+# 環境ごとの設定
+environments = {
+    'dev': Environment(
+        account=app.node.try_get_context('dev_account') or '123456789012',
+        region=app.node.try_get_context('dev_region') or 'ap-northeast-1'
+    ),
+    'prod': Environment(
+        account=app.node.try_get_context('prod_account') or '123456789012',
+        region=app.node.try_get_context('prod_region') or 'ap-northeast-1'
+    )
+}
+
+# 環境に基づいたスタック名
+stack_name = f"AwsDocsArchiverStack-{env_name}"
+
+# スタックをデプロイ
+AwsDocsArchiverStack(app, stack_name, env=environments.get(env_name))
+
 app.synth()
