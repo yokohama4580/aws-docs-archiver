@@ -15,6 +15,51 @@ AWS公式ドキュメントをクロールし、日次で変更を確認して�
 - ストレージ: S3 + DynamoDB
 - インフラ: AWS CDK (Python)
 
+## 開発環境セットアップ
+
+1. リポジトリをクローン
+```
+git clone https://github.com/yokohama4580/aws-docs-archiver.git
+cd aws-docs-archiver
+```
+
+2. 依存関係のインストール
+```
+pip install -r requirements.txt
+```
+
+3. テスト実行
+```
+pytest tests/
+```
+
+## CI/CDワークフロー
+
+このプロジェクトではGitHub ActionsとAWS OIDC認証を使用したCI/CDパイプラインを実装しています。
+
+### CI (継続的インテグレーション)
+- コードの静的解析（pylint）
+- ユニットテスト実行（pytest）
+- コードカバレッジ計測
+- CDKのセキュリティスキャン
+
+### CD (継続的デプロイ)
+- GitHub ActionsからのOIDC認証によるAWS環境への安全なデプロイ
+- 開発環境(dev)への自動デプロイ
+- 本番環境(prod)への手動承認デプロイ
+
+## AWS環境のセットアップ
+
+### OIDC認証のセットアップ
+
+AWS環境でGitHub ActionsからのOIDC認証を有効にするには:
+
+1. AWS IAM Identity Providerの作成
+2. IAMロールの設定
+3. 信頼ポリシーの設定
+
+詳細な設定手順については`docs/aws-oidc-setup.md`を参照してください。
+
 ## セットアップ手順
 
 準備中...
