@@ -86,27 +86,29 @@ class AWSDocsCrawler:
         if not html_content:
             return None, False
         
-        # ページのタイトルと現在のタイムスタンプを取得
+        # ページのタイトルを取得
         title = extract_page_title(html_content)
-        timestamp = datetime.now()
+        
+        # 現在のタイムスタンプ（ログ・記録用）
+        current_time = datetime.now()
         
         # ページコンテンツオブジェクトを作成
         page_content = PageContent(
             url=url,
             html_content=html_content,
             title=title,
-            timestamp=timestamp
+            timestamp=current_time  # 処理時刻を記録
         )
         
         # 既存のメタデータを取得
         existing_metadata = get_page_metadata_from_dynamodb(url)
         
-        # 変更があるかチェック
+        # 変更があるかチェック - コンテンツハッシュで比較
         is_changed = True
         if existing_metadata:
             is_changed = existing_metadata.current_content_hash != page_content.content_hash
         
-        # 変更がある場合、または初めて見るページの場合、保存する
+        # 変更がある場合、または初めて見るページの場合のみ保存する
         if is_changed:
             logger.info(f"変更検出または新規ページ: {url}")
             
@@ -116,11 +118,14 @@ class AWSDocsCrawler:
                 logger.error(f"S3保存失敗: {url}")
                 return page_content, False
             
+            # 更新のタイムスタンプは変更が確認された時点のもの
+            update_time = current_time
+            
             # バージョン情報を作成
             page_version = PageVersion(
                 url=url,
                 version_id=version_id,
-                timestamp=timestamp,
+                timestamp=update_time,
                 content_hash=page_content.content_hash,
                 title=title
             )
@@ -134,8 +139,8 @@ class AWSDocsCrawler:
                 metadata = PageMetadata(
                     url=url,
                     title=title,
-                    first_seen=timestamp,
-                    last_updated=timestamp,
+                    first_seen=update_time,
+                    last_updated=update_time,
                     current_content_hash=page_content.content_hash,
                     versions=[page_version.to_dict()]
                 )
